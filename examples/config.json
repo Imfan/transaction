@@ -1,0 +1,32 @@
+{
+  "pool": {
+    "initial_size": 5,
+    "max_size": 50,
+    "idle_timeout": "30m",
+    "max_conn_age": "1h",
+    "health_check_period": "30s",
+    "connect_timeout": "5s",
+    "keep_alive": "30s"
+  },
+  "discovery": {
+    "consul_addr": "localhost:8500",
+    "service_name": "your-service",
+    "refresh_period": "10s",
+    "tags": ["v1.0", "production"],
+    "datacenter": "dc1",
+    "token": ""
+  },
+  "tls": {
+    "enable": false,
+    "cert_file": "/path/to/cert.pem",
+    "key_file": "/path/to/key.pem",
+    "ca_file": "/path/to/ca.pem",
+    "server_name": "your-service",
+    "skip_verify": false
+  },
+  "metrics": {
+    "enable": true,
+    "port": 9090,
+    "path": "/metrics"
+  }
+} 
