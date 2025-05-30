@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"grpc-pool/pool"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -21,14 +22,14 @@ func main() {
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		},
 	}
-
+	log.Println("创建连接池")
 	// 创建连接池
 	pool, err := pool.NewPool(config)
 	if err != nil {
 		log.Fatalf("Failed to create pool: %v", err)
 	}
 	defer pool.Close()
-
+	log.Println("使用连接池")
 	// 使用连接池
 	ctx := context.Background()
 	for i := 0; i < 5; i++ {
@@ -45,7 +46,7 @@ func main() {
 		// 将连接放回池中
 		pool.Put(conn)
 	}
-
+	log.Println("关闭连接池")
 	// 等待一段时间以观察连接池的行为
 	time.Sleep(2 * time.Second)
-} 
+}

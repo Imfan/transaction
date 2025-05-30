@@ -15,10 +15,15 @@ var (
 	ErrConnClosed = errors.New("connection is closed")
 )
 
+// PoolInterface 定义了连接池需要实现的接口
+type PoolInterface interface {
+	Put(conn *Conn)
+}
+
 // Conn 包装了 gRPC 连接
 type Conn struct {
 	*grpc.ClientConn
-	pool     *Pool
+	pool     PoolInterface
 	lastUsed time.Time
 }
 
