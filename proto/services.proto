@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package services;
+
+option go_package = "transaction/proto";
+
+// 用户服务
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+  int32 age = 4;
+  string created_at = 5;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  int32 age = 3;
+}
+
+message CreateUserResponse {
+  string user_id = 1;
+  string message = 2;
+}
+
+// 订单服务
+service OrderService {
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message GetOrderResponse {
+  string order_id = 1;
+  string user_id = 2;
+  repeated OrderItem items = 3;
+  double total_amount = 4;
+  string status = 5;
+  string created_at = 6;
+}
+
+message CreateOrderRequest {
+  string user_id = 1;
+  repeated OrderItem items = 2;
+}
+
+message CreateOrderResponse {
+  string order_id = 1;
+  string message = 2;
+}
+
+message ListOrdersRequest {
+  string user_id = 1;
+  int32 limit = 2;
+}
+
+message ListOrdersResponse {
+  repeated GetOrderResponse orders = 1;
+}
+
+message OrderItem {
+  string product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  double price = 4;
+}
+
+// 支付服务
+service PaymentService {
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+}
+
+message ProcessPaymentRequest {
+  string order_id = 1;
+  string user_id = 2;
+  double amount = 3;
+  string payment_method = 4;
+}
+
+message ProcessPaymentResponse {
+  string payment_id = 1;
+  string status = 2;
+  string message = 3;
+  string transaction_id = 4;
+}
+
+message GetPaymentRequest {
+  string payment_id = 1;
+}
+
+message GetPaymentResponse {
+  string payment_id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  double amount = 4;
+  string status = 5;
+  string created_at = 6;
+}
+
+message RefundPaymentRequest {
+  string payment_id = 1;
+  double amount = 2;
+  string reason = 3;
+}
+
+message RefundPaymentResponse {
+  string refund_id = 1;
+  string status = 2;
+  string message = 3;
+} 

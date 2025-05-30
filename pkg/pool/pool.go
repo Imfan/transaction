@@ -50,7 +50,7 @@ type grpcPool struct {
 
 	// 连接管理
 	connections map[string][]*Connection // target -> connections
-	connChan    chan *Connection        // 连接通道
+	connChan    chan *Connection         // 连接通道
 	mutex       sync.RWMutex
 
 	// 控制通道
@@ -200,7 +200,7 @@ func (p *grpcPool) Stats() PoolStats {
 	defer p.mutex.RUnlock()
 
 	stats := PoolStats{}
-	
+
 	for _, conns := range p.connections {
 		for _, conn := range conns {
 			stats.TotalConnections++
@@ -267,14 +267,14 @@ func (p *grpcPool) createGRPCConnection(ctx context.Context, target string) (*gr
 
 	// 设置keepalive
 	kacp := keepalive.ClientParameters{
-		Time:                p.config.Pool.KeepAlive,
-		Timeout:             p.config.Pool.ConnectTimeout,
+		Time:                p.config.Pool.KeepAlive.ToDuration(),
+		Timeout:             p.config.Pool.ConnectTimeout.ToDuration(),
 		PermitWithoutStream: true,
 	}
 	opts = append(opts, grpc.WithKeepaliveParams(kacp))
 
 	// 设置连接超时
-	ctx, cancel := context.WithTimeout(ctx, p.config.Pool.ConnectTimeout)
+	ctx, cancel := context.WithTimeout(ctx, p.config.Pool.ConnectTimeout.ToDuration())
 	defer cancel()
 
 	return grpc.DialContext(ctx, target, opts...)
@@ -333,7 +333,7 @@ func (p *grpcPool) preheatConnections(nodes []*balancer.Node) {
 			needed := p.config.Pool.InitialSize - existingConns
 			for i := 0; i < needed; i++ {
 				go func(target string) {
-					ctx, cancel := context.WithTimeout(context.Background(), p.config.Pool.ConnectTimeout)
+					ctx, cancel := context.WithTimeout(context.Background(), p.config.Pool.ConnectTimeout.ToDuration())
 					defer cancel()
 
 					grpcConn, err := p.createGRPCConnection(ctx, target)
@@ -345,7 +345,7 @@ func (p *grpcPool) preheatConnections(nodes []*balancer.Node) {
 					}
 
 					conn := NewConnection(grpcConn, target)
-					
+
 					p.mutex.Lock()
 					p.connections[target] = append(p.connections[target], conn)
 					p.mutex.Unlock()
@@ -365,7 +365,7 @@ func (p *grpcPool) preheatConnections(nodes []*balancer.Node) {
 }
 
 func (p *grpcPool) startConnectionCleaner(ctx context.Context) {
-	ticker := time.NewTicker(p.config.Pool.HealthCheckPeriod)
+	ticker := time.NewTicker(p.config.Pool.HealthCheckPeriod.ToDuration())
 	defer ticker.Stop()
 
 	for {
@@ -386,21 +386,21 @@ func (p *grpcPool) cleanupConnections() {
 
 	for target, conns := range p.connections {
 		var activeConns []*Connection
-		
+
 		for _, conn := range conns {
 			// 检查连接是否需要清理
 			shouldCleanup := false
-			
+
 			// 检查连接年龄
-			if conn.GetAge() > p.config.Pool.MaxConnAge {
+			if conn.GetAge() > p.config.Pool.MaxConnAge.ToDuration() {
 				shouldCleanup = true
 			}
-			
+
 			// 检查空闲时间
-			if conn.IsIdle() && conn.GetIdleTime() > p.config.Pool.IdleTimeout {
+			if conn.IsIdle() && conn.GetIdleTime() > p.config.Pool.IdleTimeout.ToDuration() {
 				shouldCleanup = true
 			}
-			
+
 			// 检查连接健康状态
 			if !conn.IsHealthy() {
 				shouldCleanup = true
@@ -418,7 +418,7 @@ func (p *grpcPool) cleanupConnections() {
 				activeConns = append(activeConns, conn)
 			}
 		}
-		
+
 		p.connections[target] = activeConns
 	}
 
@@ -428,10 +428,10 @@ func (p *grpcPool) cleanupConnections() {
 
 func (p *grpcPool) updateMetrics() {
 	stats := p.Stats()
-	
+
 	for target := range p.connections {
 		metrics.UpdatePoolSize(p.serviceName, target, stats.TotalConnections)
 		metrics.UpdateActiveConnections(p.serviceName, target, stats.ActiveConnections)
 		metrics.UpdateIdleConnections(p.serviceName, target, stats.IdleConnections)
 	}
-} 
+}

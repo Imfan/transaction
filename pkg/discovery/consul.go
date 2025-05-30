@@ -110,7 +110,7 @@ func (c *consulDiscovery) Subscribe(callback func([]*balancer.Node)) {
 }
 
 func (c *consulDiscovery) watchNodes(ctx context.Context) {
-	ticker := time.NewTicker(c.config.RefreshPeriod)
+	ticker := time.NewTicker(c.config.RefreshPeriod.ToDuration())
 	defer ticker.Stop()
 
 	for {
@@ -134,7 +134,7 @@ func (c *consulDiscovery) updateNodes() error {
 	// 查询健康的服务实例
 	queryOpts := &api.QueryOptions{
 		WaitIndex: c.lastIndex,
-		WaitTime:  c.config.RefreshPeriod,
+		WaitTime:  c.config.RefreshPeriod.ToDuration(),
 	}
 
 	services, meta, err := c.client.Health().Service(
@@ -293,7 +293,7 @@ func NewHealthChecker(discovery ServiceDiscovery, bal balancer.Balancer, cfg *co
 
 // Start 启动健康检查
 func (h *HealthChecker) Start(ctx context.Context) {
-	ticker := time.NewTicker(h.config.HealthCheckPeriod)
+	ticker := time.NewTicker(h.config.HealthCheckPeriod.ToDuration())
 	defer ticker.Stop()
 
 	h.logger.Info("Health checker started")

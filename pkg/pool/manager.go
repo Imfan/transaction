@@ -76,18 +76,43 @@ func (m *Manager) Stop() error {
 	return nil
 }
 
-// GetPool 获取指定服务的连接池
+// GetPool 获取或创建指定服务的连接池
 func (m *Manager) GetPool(serviceName string) (Pool, error) {
 	m.mutex.RLock()
-	pool, exists := m.pools[serviceName]
+	if pool, exists := m.pools[serviceName]; exists {
+		m.mutex.RUnlock()
+		return pool, nil
+	}
 	m.mutex.RUnlock()
 
-	if exists {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	// 再次检查是否已存在
+	if pool, exists := m.pools[serviceName]; exists {
 		return pool, nil
 	}
 
-	// 创建新的连接池
-	return m.createPool(serviceName)
+	// 复制配置并设置服务名
+	cfg := *m.config
+	cfg.Discovery.ServiceName = serviceName
+
+	// 创建连接池
+	pool, err := NewPool(serviceName, &cfg, m.logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pool for service %s: %w", serviceName, err)
+	}
+
+	// 启动连接池
+	ctx := context.Background()
+	if err := pool.(*grpcPool).Start(ctx); err != nil {
+		return nil, fmt.Errorf("failed to start pool for service %s: %w", serviceName, err)
+	}
+
+	m.pools[serviceName] = pool
+	m.logger.Info("Created new connection pool", zap.String("service", serviceName))
+
+	return pool, nil
 }
 
 // CreatePool 创建指定服务的连接池

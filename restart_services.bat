@@ -1,0 +1,36 @@
+@echo off
+echo Restarting all gRPC services with Consul registration...
+echo.
+
+echo Killing existing go processes...
+taskkill /F /IM go.exe 2>nul
+
+echo Waiting for processes to stop...
+timeout /t 3 /nobreak > nul
+
+echo Starting services with Consul registration...
+echo.
+
+echo Starting User Service (Port 8001)...
+start "User-Service-8001" cmd /k "cd services/user-service && go run main.go 8001 v1.0"
+
+echo Starting User Service (Port 8002)...
+start "User-Service-8002" cmd /k "cd services/user-service && go run main.go 8002 v1.0"
+
+echo Starting Order Service (Port 8003)...
+start "Order-Service-8003" cmd /k "cd services/order-service && go run main.go 8003 v1.0"
+
+echo Starting Order Service (Port 8004)...
+start "Order-Service-8004" cmd /k "cd services/order-service && go run main.go 8004 v1.0"
+
+echo Starting Payment Service (Port 8005)...
+start "Payment-Service-8005" cmd /k "cd services/payment-service && go run main.go 8005 v1.0"
+
+echo Starting Payment Service (Port 8006)...
+start "Payment-Service-8006" cmd /k "cd services/payment-service && go run main.go 8006 v1.0"
+
+echo.
+echo All services are starting...
+echo Wait 10 seconds for services to register with Consul, then run:
+echo   go run production_example.go
+echo. 
